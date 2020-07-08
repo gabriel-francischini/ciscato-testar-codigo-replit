@@ -144,7 +144,7 @@ def run_input_file(inputpath, gabaritopath, args=[]):
     global last_main_exe_invocation
     global last_inputpath
     global last_main_exe_stdout
-    keyword = "arqent"
+    keyword = "ARQENT"
     tempfile = keyword + ".input"
 
     # Copia o arquivo de entrada usando um nome pré-determinado
@@ -230,12 +230,12 @@ def color_diffs(bytes_src, bytes_dest):
     hex2bin = {
         '0': '0000', '1': '0001', '2': '0010', '3': '0011',
         '4': '0100', '5': '0101', '6': '0110', '7': '0111',
-        '8': '1000', '9': '1001', 'a': '1010', 'b': '1011',
-        'c': '1100', 'd': '1101', 'e': '1110', 'f': '1111',
+        '8': '1000', '9': '1001', 'A': '1010', 'B': '1011',
+        'C': '1100', 'D': '1101', 'E': '1110', 'F': '1111',
         ' ': ' '
     }
 
-    byte2hex = lambda b: bytes([b]).hex()
+    byte2hex = lambda b: bytes([b]).hex().upper()
     byte2bin = lambda b: ''.join([hex2bin[ch] if ch in hex2bin
                                   else ch
                                   for ch in byte2hex(b)])
@@ -243,11 +243,13 @@ def color_diffs(bytes_src, bytes_dest):
     hexdiff = ''
 
     bin_line = ''
+    hex_line = ''
     ascii_line = ''
 
     # These don't contain special characters for color-coding, so we can
     # use them to calculate spaces and alignments
     raw_bin_line = ''
+    raw_hex_line = ''
     raw_ascii_line = ''
 
 
@@ -266,6 +268,7 @@ def color_diffs(bytes_src, bytes_dest):
             ch = '�'
 
         raw_bin_line += byte2bin(byte_)
+        raw_hex_line += byte2hex(byte_)
         raw_ascii_line += ch
 
 
@@ -279,12 +282,14 @@ def color_diffs(bytes_src, bytes_dest):
             # diff.
             if from_ == i:
                 if op_ == 'insert':
-                    bin_line += colored(byte2bin(byte_), 'magenta', 'on_green')
-                    ascii_line += colored(ch, 'magenta', 'on_green')
+                    bin_line += colored(byte2bin(byte_), 'red', 'on_green')
+                    hex_line += colored(byte2hex(byte_), 'red', 'on_green')
+                    ascii_line += colored(ch, 'red', 'on_green')
 
                 elif op_ == 'delete':
-                    bin_line += colored(byte2bin(byte_), 'magenta', 'on_red')
-                    ascii_line += colored(ch, 'magenta', 'on_red')
+                    bin_line += colored(byte2bin(byte_), 'white', 'on_red')
+                    hex_line += colored(byte2hex(byte_), 'white', 'on_red')
+                    ascii_line += colored(ch, 'white', 'on_red')
                 elif op_ == 'replace':
                     src_bin = byte2bin(byte_)
                     dest_bin = byte2bin(bytes_dest[to_])
@@ -294,10 +299,12 @@ def color_diffs(bytes_src, bytes_dest):
                         if src_bin[j] == dest_bin[j]:
                             bin_line += src_bin[j]
                         else:
-                            bin_line += colored(src_bin[j], 'magenta', 'on_yellow')
-                    ascii_line += colored(ch, 'magenta', 'on_yellow')
+                            bin_line += colored(src_bin[j], 'white', 'on_yellow')
+                    hex_line += colored(byte2hex(byte_), 'white', 'on_yellow')
+                    ascii_line += colored(ch, 'white', 'on_yellow')
                 else:
                     bin_line += byte2bin(byte_)
+                    hex_line += byte2hex(byte_)
                     ascii_line += ch
 
                 byte_processed = True
@@ -305,6 +312,7 @@ def color_diffs(bytes_src, bytes_dest):
 
         if not byte_processed:
             bin_line += byte2bin(byte_)
+            hex_line += byte2hex(byte_)
             ascii_line += ch
 
         # Every each 3 bytes, we add a line
@@ -320,24 +328,31 @@ def color_diffs(bytes_src, bytes_dest):
             space_after = ' ' * (4 - len(raw_ascii_line))
             ascii_line += space_after
 
-            hexdiff += offset + bin_line + ' │ ' + ascii_line + '  \n'
+            space_after = ' ' * ((2*4 + 3) - len(raw_hex_line))
+            hex_line += space_after
 
-            bin_line, ascii_line, raw_bin_line, raw_ascii_line = '', '', '', ''
+            hexdiff += offset + bin_line + ' │ ' + ascii_line + '  │ ' + hex_line +   '  \n'
+
+            bin_line, ascii_line, hex_line = '', '', ''
+            raw_bin_line, raw_hex_line, raw_ascii_line = '', '', ''
         else:
             bin_line += ' '
+            hex_line += ' '
+
             raw_bin_line += ' '
+            raw_hex_line += ' '
 
 
     # A parte a seguir é um hack pra fazer a tabela ficar bonitinha
     header = ''
     #header  = '0123456789_12┬0123456789_123456789_123456789_123456┬0123456┐' + '\n'
-    header += '┌─────────────┬─────────────────────────────────────┬───────┐' + '\n'
-    header += '│   OFFSET    │    BINARY REPRESENTATION OF FILE    │ ASCII │' + '\n'
-    header += '│─────────────┼─────────────────────────────────────┼───────│' + '\n'
+    header += '┌─────────────┬─────────────────────────────────────┬───────┬──────────────┐' + '\n'
+    header += '│   OFFSET    │    BINARY REPRESENTATION OF FILE    │ ASCII │ HEXADECIMAL  │' + '\n'
+    header += '│─────────────┼─────────────────────────────────────┼───────┼──────────────│' + '\n'
 
     if len(bytes_src) > 0:
         hexdiff = '│' + hexdiff.replace('\n', '│\n│').rstrip('│').rstrip('\n') + '\n'
-    footer  = '└─────────────┴─────────────────────────────────────┴───────┘'
+    footer  = '└─────────────┴─────────────────────────────────────┴───────┴──────────────┘'
     return (header + hexdiff + footer)
 
 
@@ -376,15 +391,18 @@ for num, (entrada_fp, gabarito_fp) in enumerate(testes):
 
     por100 = "[{: >2.0f}%]".format(100 * (num + 1) / len(testes))
     if passou:
+        passes += 1
+        cor = 'green' if falhas == 0 else 'white'
         print(colored(por100 + " PASSOU: {} --> {}"
-                      .format(entrada_fp, gabarito_fp), 'green'))
+                      .format(entrada_fp, gabarito_fp), cor))
     else:
+        falhas += 1
         print('')
         print(colored(por100 + " FALHOU: {} --> {}"
                       .format(entrada_fp, gabarito_fp), 'red'))
         print(8 * ' ' + 'Invocação do programa: ')
         print(12 * ' '
-              + ' cp -vf "{}" "{}" && '.format(entrada_fp, 'arqent.input')
+              + ' cp -vf "{}" "{}" && '.format(entrada_fp, 'ARQENT.input')
               + ' '.join(['"' + i + '"' for i in last_main_exe_invocation]) + '\n')
         print(colored(8 * ' ' + '{:-^40s}'.format(' Saída do main.exe: '),
                       'yellow'))
@@ -393,3 +411,17 @@ for num, (entrada_fp, gabarito_fp) in enumerate(testes):
         show_diff(entrada_data, gabarito_data, saida_data)
         print('')
 
+
+print('\n\n\n' + colored('-' * 40, 'white'))
+print('Rodou {} testes\n'.format(passes + falhas))
+
+if falhas > 0:
+    print('BUILD {} (failures={})'.format(colored('FAILED', 'red'),
+                                          falhas))
+else:
+    if testar_so_um_modo:
+        print('BUILD {} para o modo {}'.format(colored('OK', 'green'),
+                                               testar_so_um_modo))
+    else:
+        print('BUILD ' + colored('OK', 'green'))
+print()

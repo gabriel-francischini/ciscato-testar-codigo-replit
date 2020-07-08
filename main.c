@@ -74,9 +74,17 @@ int Crypt(FILE *arqent, FILE* arqsai,
         perror("Ocorreu um erro na gravacao. Finalizando...");
           return ERRO;
         }
+
+        // GABRIEL: Comentei pois tava dando
+        // erro de compilação e impedindo de
+        // rodar os testes.
+        // Descomenta aí e tenta ver o que
+        // deu ruim
+        /*
         if(ferror(arqent) || !feof(arqent)){
-        printf("Ocorreu fim prematuro de arquivo de entrada.");
-        return ERRO;
+            printf("Ocorreu fim prematuro de arquivo de entrada.");
+            return ERRO;
+        */
         
         i++;
         if (chave[i] == '\0')
