@@ -30,30 +30,34 @@ char *chave;
 // É uma boa idéia usar um HexEditor pra checar o resultado do ARQSAI
 int  DAT_to_INV_to_DNV(FILE *arqent, FILE *arqsai){
     //Lê o arqent.
-    char ch = fgetc(arqent);
+    int ch = fgetc(arqent);
     //Pega o arqsai fazendo o ponteiro *conv apontar para aqrsai.
     FILE *conv = arqsai;
     //Enquando a leitura do arqent for diferente ao fim do arquivo (EOF)
     //ele irá escrever os caracteres lidos de arqent em arqsai 
+    int a;
     while (ch != EOF)
     {
-        fputc(ch, conv);
+      a = fputc(~ch, conv);
+      ch = fgetc(arqent);
     }
     //Aqui verificamos se ouve um fim prematuro do arquivo
     //no fgetc da linha 33
+    
   if (ferror(arqent) || feof(arqent)){
     printf("Erro: Fim de arquivo prematuro");
     return ERRO;
   }else {
    return SEM_ERRO; 
   }
+  
   //Aqui verificamos se ouve um fim prematuro do arquivo
   //no fputc da linha 40
-  if(fputc == EOF){
-    print("Ocorreu um erro");
+  if(a == EOF){
+    printf("Ocorreu um erro");
     return ERRO;
   }
-  
+  return SEM_ERRO;
 }
 
 
