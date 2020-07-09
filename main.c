@@ -114,7 +114,7 @@ int unix_to_dos(FILE *arqent, FILE* arqsai){
       printf("Um erro ocorreu ao escrever no arquivo de saida usando.");
       return ERRO;
     }
-    if(ferror(arqent) || !feof(arqent)) {
+    if(ferror(arqent) || feof(arqent)) {
       printf("Ocorreu fim prematuro de arquivo de entrada.");
       return ERRO;
     }
